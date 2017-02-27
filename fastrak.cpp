@@ -161,7 +161,7 @@ BOOL StartCont( VOID )
 {
 	BOOL bRet = FALSE;
 
-	time(&g_beginTime);
+	GetBeginTime();
 	if (!(g_pdiDev.StartContPno(0)))
 	{
 	}
@@ -288,12 +288,12 @@ VOID DisplayFrame( PBYTE pBuf, DWORD dwSize )
 }
 
 VOID ResetData() {
-	time(&g_beginTime);
+	GetBeginTime();
 	g_pdiDev.ResetPnoPtr();
 }
 
 VOID GetData ( int & nrhs, mxArray *plhs[] ) {
-	time(&g_endTime);
+	GetEndTime();;
 
 	PBYTE pBuf = g_pMotionBuf;
 	DWORD dwSize = 0;
@@ -326,6 +326,58 @@ VOID GetData ( int & nrhs, mxArray *plhs[] ) {
 			resultP[j * frameCount + i] = pPno[j];
 		}
 	}
+}
+
+VOID GetAFrame(int & nrhs, mxArray *plhs[])
+{
+	PBYTE pBuf = g_pMotionBuf;
+	DWORD dwSize = 0;
+	if (!(g_pdiDev.LastPnoPtr(pBuf, dwSize)))
+		AddResultMsg(_T("LastPnoPtr"));
+	else if ((pBuf == g_pMotionBuf) || (dwSize == 0))
+		AddResultMsg(_T("Read ERROR"));
+
+	plhs[0] = mxCreateDoubleMatrix(1, 6, mxREAL);
+	double *resultP = mxGetPr(plhs[2]);
+
+	FT_BINHDR *pHdr = (FT_BINHDR*)(pBuf);
+	pBuf += sizeof(FT_BINHDR);
+	PFLOAT pPno = (PFLOAT)(pBuf);
+	for (int j = 0; j < 6; j++) {
+		resultP[j] = pPno[j];
+	}
+}
+
+static const unsigned __int64 epoch = ((unsigned __int64)116444736000000000ULL);
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+	FILETIME    file_time;
+	SYSTEMTIME  system_time;
+	ULARGE_INTEGER ularge;
+
+	GetSystemTime(&system_time);
+	SystemTimeToFileTime(&system_time, &file_time);
+	ularge.LowPart = file_time.dwLowDateTime;
+	ularge.HighPart = file_time.dwHighDateTime;
+
+	tp->tv_sec = (long)((ularge.QuadPart - epoch) / 10000000L);
+	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
+
+	return 0;
+}
+
+VOID GetBeginTime(VOID)
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	g_beginTime = static_cast<INT64>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+}
+
+VOID GetEndTime(VOID)
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	g_endTime = static_cast<INT64>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
 }
 
 void mexFunction( int nlhs, mxArray *plhs[],
@@ -388,8 +440,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     }
 
 	if (!strcmp(str, "test")) {
-		time(&g_beginTime);
-		time(&g_endTime);
+		GetBeginTime();
+		GetEndTime();;
 
 		double *p1, *p2;
 		plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);

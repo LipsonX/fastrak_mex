@@ -370,14 +370,14 @@ VOID GetBeginTime(VOID)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	g_beginTime = static_cast<INT64>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+	g_beginTime = (static_cast<INT64>(tv.tv_sec) % 10000) * 1000000 + tv.tv_usec;
 }
 
 VOID GetEndTime(VOID)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	g_endTime = static_cast<INT64>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+	g_endTime = (static_cast<INT64>(tv.tv_sec) % 10000) * 1000000 + tv.tv_usec;
 }
 
 void mexFunction( int nlhs, mxArray *plhs[],

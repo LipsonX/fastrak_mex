@@ -58,3 +58,9 @@ BOOL		StopCont			( VOID );
 VOID		DisplayCont			( VOID );
 VOID		DisplaySingle		( VOID );
 VOID		DisplayFrame		( PBYTE, DWORD );
+VOID		GetBeginTime(VOID);
+VOID		GetEndTime(VOID);
+VOID		ResetData(VOID);
+VOID		GetData(int & nrhs, mxArray *plhs[]);
+VOID		GetAFrame(int & nrhs, mxArray *plhs[]);
+

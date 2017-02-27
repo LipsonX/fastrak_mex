@@ -8,7 +8,9 @@ BOOL Initialize( VOID )
 	g_pdiMDat.Empty();
 	g_pdiMDat.Append( PDI_MODATA_POS );
 	g_pdiMDat.Append( PDI_MODATA_ORI );
-	g_dwFrameSize = 8+12+12;
+	g_pdiMDat.Append( PDI_MODATA_CRLF );
+	
+	g_dwFrameSize = 8+12+12+2;
 
 	g_bCnxReady = FALSE;
 	g_dwStationMap = 0;
@@ -161,7 +163,7 @@ BOOL StartCont( VOID )
 {
 	BOOL bRet = FALSE;
 
-
+	time(&g_beginTime);
 	if (!(g_pdiDev.StartContPno(0)))
 	{
 	}
@@ -292,20 +294,19 @@ VOID ResetData() {
 	g_pdiDev.ResetPnoPtr();
 }
 
-VOID GetData ( int nrhs, const mxArray *plhs[] ) {
+VOID GetData ( int & nrhs, mxArray *plhs[] ) {
 	time(&g_endTime);
 
 	PBYTE pBuf = g_pMotionBuf;
 	DWORD dwSize = 0;
-	if (!(g_pdiDev.ReadSinglePnoBuf(pBuf, dwSize)))
-		AddResultMsg(_T("ReadSinglePno") );
-	else if ((pBuf == 0) || (dwSize == 0))
+	if (!(g_pdiDev.LastPnoPtr(pBuf, dwSize)))
+		AddResultMsg(_T("LastPnoPtr") );
+	else if ((pBuf == g_pMotionBuf) || (dwSize == 0))
 		AddResultMsg(_T("Read ERROR") );
 
 	int frameCount = 0;
 	int bufSizeCount = static_cast<int>(pBuf - g_pMotionBuf);
-	frameCount = bufSizeCount > 0 ? bufSizeCount : 0;
-	frameCount = frameCount / dwSize;
+	frameCount = bufSizeCount > 0 ? bufSizeCount / dwSize : 0;
 
 	double *p1, *p2;
 	plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
@@ -380,7 +381,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 		}
 
         mexPrintf("getData");
-        GetData(nrhs, prhs);
+        GetData(nrhs, plhs);
     }
     if (!strcmp(str, "stop")) {
         mexPrintf("stop and disconnect\n");

@@ -134,7 +134,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>PDI.lib;libmx.lib;libeng.lib;libmat.lib;libmex.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>fastrak.def</ModuleDefinitionFile>
-      <OutputFile>./fastrak</OutputFile>
+      <OutputFile>./fastrak.mexw64</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

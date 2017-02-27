@@ -8,9 +8,7 @@ BOOL Initialize( VOID )
 	g_pdiMDat.Empty();
 	g_pdiMDat.Append( PDI_MODATA_POS );
 	g_pdiMDat.Append( PDI_MODATA_ORI );
-	g_pdiMDat.Append( PDI_MODATA_CRLF );
-	
-	g_dwFrameSize = 8+12+12+2;
+	g_dwFrameSize = 8+12+12;
 
 	g_bCnxReady = FALSE;
 	g_dwStationMap = 0;

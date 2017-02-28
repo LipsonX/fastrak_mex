@@ -314,9 +314,9 @@ VOID GetData ( int & nrhs, mxArray *plhs[] ) {
 	p2 = mxGetPr( plhs[1]);
 	double *resultP = mxGetPr(plhs[2]);
 
-	*p1 = static_cast<int>(g_beginTime);
-	*p2 = static_cast<int>(g_endTime);
-	double interval = (static_cast<double>(g_endTime - g_beginTime)) / (frameCount - 1);
+	*p1 = g_beginTime + 0.0;
+	*p2 = g_endTime + 0.0;
+	double interval = (g_endTime - g_beginTime + 0.0) / (frameCount - 1);
 
 	PBYTE itrP = g_pMotionBuf;
 	for (int i = 0; i < frameCount; i += 1) {
@@ -328,8 +328,7 @@ VOID GetData ( int & nrhs, mxArray *plhs[] ) {
 			resultP[j * frameCount + i] = pPno[j];
 		}
 
-		resultP[6 * frameCount + i] = static_cast<int>(
-			static_cast<int>(interval * i) + g_beginTime);
+		resultP[6 * frameCount + i] = interval * i + g_beginTime;
 	}
 }
 
@@ -353,8 +352,7 @@ VOID GetAFrame(int & nrhs, mxArray *plhs[])
 	for (int j = 0; j < 6; j++) {
 		resultP[j] = pPno[j];
 	}
-
-	resultP[6] = static_cast<int>(now);
+	resultP[6] = now + 0.0;
 }
 
 static const unsigned __int64 epoch = ((unsigned __int64)116444736000000000ULL);
@@ -463,18 +461,17 @@ void mexFunction( int nlhs, mxArray *plhs[],
 		p2 = mxGetPr( plhs[1]);
 		double *resultP = mxGetPr(plhs[2]);
 
-		*p1 = static_cast<int>(g_beginTime);
-		*p2 = static_cast<int>(g_endTime);
+		*p1 = g_beginTime + 0.0;
+		*p2 = g_endTime + 0.0;
 
 		mexPrintf("%d\n", g_beginTime);
 		
-		double interval = (static_cast<double>(g_endTime - g_beginTime)) / 2;
+		double interval = (g_endTime - g_beginTime + 0.0) / 2;
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 6; j++) {
 				resultP[j * 2 + i] = 1;
 			}
-			resultP[6 * 2 + i] = static_cast<int>(
-				static_cast<int>(interval * i) + g_beginTime);
+			resultP[6 * 2 + i] = interval * i + g_beginTime;
 		}
 	}
 

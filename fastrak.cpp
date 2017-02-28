@@ -353,6 +353,7 @@ VOID GetAFrame(int & nrhs, mxArray *plhs[])
 	for (int j = 0; j < 6; j++) {
 		resultP[j] = pPno[j];
 	}
+
 	resultP[6] = static_cast<int>(now);
 }
 

@@ -161,7 +161,7 @@ BOOL StartCont( VOID )
 {
 	BOOL bRet = FALSE;
 
-
+	GetBeginTime();
 	if (!(g_pdiDev.StartContPno(0)))
 	{
 	}
@@ -288,35 +288,36 @@ VOID DisplayFrame( PBYTE pBuf, DWORD dwSize )
 }
 
 VOID ResetData() {
-	time(&g_beginTime);
+	GetBeginTime();
 	g_pdiDev.ResetPnoPtr();
 }
 
-VOID GetData ( int nrhs, const mxArray *plhs[] ) {
-	time(&g_endTime);
+VOID GetData ( int & nrhs, mxArray *plhs[] ) {
+	GetEndTime();
 
 	PBYTE pBuf = g_pMotionBuf;
 	DWORD dwSize = 0;
-	if (!(g_pdiDev.ReadSinglePnoBuf(pBuf, dwSize)))
-		AddResultMsg(_T("ReadSinglePno") );
-	else if ((pBuf == 0) || (dwSize == 0))
+	if (!(g_pdiDev.LastPnoPtr(pBuf, dwSize)))
+		AddResultMsg(_T("LastPnoPtr") );
+	else if ((pBuf == g_pMotionBuf) || (dwSize == 0))
 		AddResultMsg(_T("Read ERROR") );
 
 	int frameCount = 0;
 	int bufSizeCount = static_cast<int>(pBuf - g_pMotionBuf);
-	frameCount = bufSizeCount > 0 ? bufSizeCount : 0;
-	frameCount = frameCount / dwSize;
+	frameCount = bufSizeCount > 0 ? bufSizeCount / dwSize : 0;
 
 	double *p1, *p2;
 	plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
 	plhs[1] = mxCreateDoubleMatrix(1, 1, mxREAL);
-	plhs[2] = mxCreateDoubleMatrix(frameCount, 6, mxREAL);
+	plhs[2] = mxCreateDoubleMatrix(frameCount, 7, mxREAL);
 	p1 = mxGetPr( plhs[0]);
 	p2 = mxGetPr( plhs[1]);
 	double *resultP = mxGetPr(plhs[2]);
 
-	*p1 = static_cast<double>(g_beginTime);
-	*p2 = static_cast<double>(g_endTime);
+	*p1 = static_cast<int>(g_beginTime);
+	*p2 = static_cast<int>(g_endTime);
+	double interval = (static_cast<double>(g_endTime - g_beginTime)) / (frameCount - 1);
+
 	PBYTE itrP = g_pMotionBuf;
 	for (int i = 0; i < frameCount; i += 1) {
 		itrP = i * dwSize + g_pMotionBuf;
@@ -326,7 +327,67 @@ VOID GetData ( int nrhs, const mxArray *plhs[] ) {
 		for (int j = 0; j < 6; j++) {
 			resultP[j * frameCount + i] = pPno[j];
 		}
+
+		resultP[6 * frameCount + i] = static_cast<int>(
+			static_cast<int>(interval * i) + g_beginTime);
 	}
+}
+
+VOID GetAFrame(int & nrhs, mxArray *plhs[])
+{
+	PBYTE pBuf = g_pMotionBuf;
+	DWORD dwSize = 0;
+	if (!(g_pdiDev.LastPnoPtr(pBuf, dwSize)))
+		AddResultMsg(_T("LastPnoPtr"));
+	else if ((pBuf == g_pMotionBuf) || (dwSize == 0))
+		AddResultMsg(_T("Read ERROR"));
+
+	plhs[0] = mxCreateDoubleMatrix(1, 7, mxREAL);
+	double *resultP = mxGetPr(plhs[0]);
+	time_t now;
+	GetTime(now);
+
+	FT_BINHDR *pHdr = (FT_BINHDR*)(pBuf);
+	pBuf += sizeof(FT_BINHDR);
+	PFLOAT pPno = (PFLOAT)(pBuf);
+	for (int j = 0; j < 6; j++) {
+		resultP[j] = pPno[j];
+	}
+	resultP[6] = static_cast<int>(now);
+}
+
+static const unsigned __int64 epoch = ((unsigned __int64)116444736000000000ULL);
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+	FILETIME    file_time;
+	SYSTEMTIME  system_time;
+	ULARGE_INTEGER ularge;
+
+	GetSystemTime(&system_time);
+	SystemTimeToFileTime(&system_time, &file_time);
+	ularge.LowPart = file_time.dwLowDateTime;
+	ularge.HighPart = file_time.dwHighDateTime;
+
+	tp->tv_sec = (long)((ularge.QuadPart - epoch) / 10000000L);
+	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
+
+	return 0;
+}
+
+VOID GetTime(time_t &usTime) {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	usTime = (static_cast<INT64>(tv.tv_sec) % 10000) * 1000000 + tv.tv_usec;
+}
+
+VOID GetBeginTime(VOID)
+{
+	GetTime(g_beginTime);
+}
+
+VOID GetEndTime(VOID)
+{
+	GetTime(g_endTime);
 }
 
 void mexFunction( int nlhs, mxArray *plhs[],
@@ -380,7 +441,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 		}
 
         mexPrintf("getData");
-        GetData(nrhs, prhs);
+        GetData(nrhs, plhs);
     }
     if (!strcmp(str, "stop")) {
         mexPrintf("stop and disconnect\n");
@@ -389,26 +450,30 @@ void mexFunction( int nlhs, mxArray *plhs[],
     }
 
 	if (!strcmp(str, "test")) {
-		time(&g_beginTime);
-		time(&g_endTime);
+		GetBeginTime();
+		Sleep(100);
+		GetEndTime();
 
 		double *p1, *p2;
 		plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
 		plhs[1] = mxCreateDoubleMatrix(1, 1, mxREAL);
-		plhs[2] = mxCreateDoubleMatrix(2, 6, mxREAL);
+		plhs[2] = mxCreateDoubleMatrix(2, 7, mxREAL);
 		p1 = mxGetPr( plhs[0]);
 		p2 = mxGetPr( plhs[1]);
 		double *resultP = mxGetPr(plhs[2]);
 
-		*p1 = static_cast<double>(g_beginTime);
-		*p2 = static_cast<double>(g_endTime);
+		*p1 = static_cast<int>(g_beginTime);
+		*p2 = static_cast<int>(g_endTime);
 
 		mexPrintf("%d\n", g_beginTime);
 		
+		double interval = (static_cast<double>(g_endTime - g_beginTime)) / 2;
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 6; j++) {
 				resultP[j * 2 + i] = 1;
 			}
+			resultP[6 * 2 + i] = static_cast<int>(
+				static_cast<int>(interval * i) + g_beginTime);
 		}
 	}
 

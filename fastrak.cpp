@@ -293,7 +293,7 @@ VOID ResetData() {
 }
 
 VOID GetData ( int & nrhs, mxArray *plhs[] ) {
-	GetEndTime();;
+	GetEndTime();
 
 	PBYTE pBuf = g_pMotionBuf;
 	DWORD dwSize = 0;
@@ -309,13 +309,15 @@ VOID GetData ( int & nrhs, mxArray *plhs[] ) {
 	double *p1, *p2;
 	plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
 	plhs[1] = mxCreateDoubleMatrix(1, 1, mxREAL);
-	plhs[2] = mxCreateDoubleMatrix(frameCount, 6, mxREAL);
+	plhs[2] = mxCreateDoubleMatrix(frameCount, 7, mxREAL);
 	p1 = mxGetPr( plhs[0]);
 	p2 = mxGetPr( plhs[1]);
 	double *resultP = mxGetPr(plhs[2]);
 
 	*p1 = static_cast<double>(g_beginTime);
 	*p2 = static_cast<double>(g_endTime);
+	double interval = (static_cast<double>(g_endTime - g_beginTime)) / frameCount;
+
 	PBYTE itrP = g_pMotionBuf;
 	for (int i = 0; i < frameCount; i += 1) {
 		itrP = i * dwSize + g_pMotionBuf;
@@ -325,6 +327,9 @@ VOID GetData ( int & nrhs, mxArray *plhs[] ) {
 		for (int j = 0; j < 6; j++) {
 			resultP[j * frameCount + i] = pPno[j];
 		}
+
+		resultP[6 * frameCount + i] = static_cast<int>(
+			static_cast<int>(interval * i) + g_beginTime);
 	}
 }
 
@@ -337,8 +342,10 @@ VOID GetAFrame(int & nrhs, mxArray *plhs[])
 	else if ((pBuf == g_pMotionBuf) || (dwSize == 0))
 		AddResultMsg(_T("Read ERROR"));
 
-	plhs[0] = mxCreateDoubleMatrix(1, 6, mxREAL);
-	double *resultP = mxGetPr(plhs[2]);
+	plhs[0] = mxCreateDoubleMatrix(1, 7, mxREAL);
+	double *resultP = mxGetPr(plhs[0]);
+	time_t now;
+	GetTime(now);
 
 	FT_BINHDR *pHdr = (FT_BINHDR*)(pBuf);
 	pBuf += sizeof(FT_BINHDR);
@@ -346,6 +353,7 @@ VOID GetAFrame(int & nrhs, mxArray *plhs[])
 	for (int j = 0; j < 6; j++) {
 		resultP[j] = pPno[j];
 	}
+	resultP[6] = static_cast<double>(now);
 }
 
 static const unsigned __int64 epoch = ((unsigned __int64)116444736000000000ULL);
@@ -366,18 +374,20 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 	return 0;
 }
 
-VOID GetBeginTime(VOID)
-{
+VOID GetTime(time_t &usTime) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	g_beginTime = (static_cast<INT64>(tv.tv_sec) % 10000) * 1000000 + tv.tv_usec;
+	usTime = (static_cast<INT64>(tv.tv_sec) % 10000) * 1000000 + tv.tv_usec;
+}
+
+VOID GetBeginTime(VOID)
+{
+	GetTime(g_beginTime);
 }
 
 VOID GetEndTime(VOID)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	g_endTime = (static_cast<INT64>(tv.tv_sec) % 10000) * 1000000 + tv.tv_usec;
+	GetTime(g_endTime);
 }
 
 void mexFunction( int nlhs, mxArray *plhs[],
@@ -441,12 +451,13 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
 	if (!strcmp(str, "test")) {
 		GetBeginTime();
-		GetEndTime();;
+		Sleep(100);
+		GetEndTime();
 
 		double *p1, *p2;
 		plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
 		plhs[1] = mxCreateDoubleMatrix(1, 1, mxREAL);
-		plhs[2] = mxCreateDoubleMatrix(2, 6, mxREAL);
+		plhs[2] = mxCreateDoubleMatrix(2, 7, mxREAL);
 		p1 = mxGetPr( plhs[0]);
 		p2 = mxGetPr( plhs[1]);
 		double *resultP = mxGetPr(plhs[2]);
@@ -456,10 +467,13 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
 		mexPrintf("%d\n", g_beginTime);
 		
+		double interval = (static_cast<double>(g_endTime - g_beginTime)) / 2;
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 6; j++) {
 				resultP[j * 2 + i] = 1;
 			}
+			resultP[6 * 2 + i] = static_cast<int>(
+				static_cast<int>(interval * i) + g_beginTime);
 		}
 	}
 

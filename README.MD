@@ -33,4 +33,4 @@ This is a solution of mex for [Polhemus Fastrak](http://polhemus.com/motion-trac
 - clean mex
 - rebuild and try your new code
 
-it may be help in [Mex文件在VS2010中调试方法](http://www.cnblogs.com/lukylu/p/4042306.html)
+it may be help in [Mex文件在VS2010中调试方法](http://www.cnblogs.com/lukylu/p/4042306.html) and [Compiling a MEX file with Visual Studio](http://coachk.cs.ucf.edu/GPGPU/Compiling_a_MEX_file_with_Visual_Studio2.htm)

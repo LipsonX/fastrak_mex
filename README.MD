@@ -12,11 +12,11 @@ This is a solution of mex for [Polhemus Fastrak](http://polhemus.com/motion-trac
 ## fastrak.mexw64 usage ##
 - open matlab.exe(x64)
 - change dir into fastrak.mexw64
-- >>```fastrak('initAll')```include discover dev and connect setup. this can be separated into ```fastrak('init')``` ```fastrak('connect')``` ```fastrak('config')```
-- >>```fastrak('start')```
-- >>```fastrak('reset')```save begin timestamp and clear data buffer
-- >>```[begin end frameData] = fastrak('getData')```get begin, end timestamp and frameData between reset and getData called.
-- >>```fastrak('stop')```to stop Cont and close connect from device 
+- `fastrak('initAll')`include discover dev and connect setup. this can be separated into `fastrak('init')` `fastrak('connect')` `fastrak('config')`
+- `fastrak('start')`
+- `fastrak('reset')`save begin timestamp and clear data buffer
+- `[begin end frameData] = fastrak('getData')`get begin, end timestamp and frameData between reset and getData called.
+- `fastrak('stop')`to stop Cont and close connect from device 
 
 ## platform ##
 - at least Windows 7 SP1, x64

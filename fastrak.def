@@ -1,0 +1,2 @@
+LIBRARY "fastrak.mexw64"
+EXPORTS mexFunction
